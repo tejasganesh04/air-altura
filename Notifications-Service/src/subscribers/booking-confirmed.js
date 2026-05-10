@@ -48,7 +48,7 @@ async function subscribeBookingConfirmed() {
 
         try {
             // Send confirmation email via Resend
-            await resend.emails.send({
+            const result = await resend.emails.send({
                 from: ServerConfig.FROM_EMAIL,
                 to: email,
                 subject: 'Your booking is confirmed!',
@@ -63,6 +63,10 @@ async function subscribeBookingConfirmed() {
                     <p>Have a great flight!</p>
                 `,
             });
+
+            if (result?.error) {
+                throw new Error(result.error.message || 'Unknown Resend error');
+            }
 
             console.log(`Confirmation email sent to ${email} for booking ${bookingId}`);
             channel.ack(msg);

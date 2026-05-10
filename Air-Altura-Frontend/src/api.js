@@ -3,8 +3,16 @@ import axios from 'axios';
 // All requests go through the API Gateway.
 // VITE_API_URL is set at build time on the hosting platform (e.g. Railway/Render).
 // Falls back to relative path in dev so the Vite proxy handles it transparently.
+function resolveApiBaseUrl() {
+  const configured = import.meta.env.VITE_API_URL?.trim();
+  if (!configured) return '/api/v1';
+
+  const normalized = configured.replace(/\/+$/, '');
+  return normalized.endsWith('/api/v1') ? normalized : `${normalized}/api/v1`;
+}
+
 const api = axios.create({
-  baseURL: import.meta.env.VITE_API_URL || '/api/v1',
+  baseURL: resolveApiBaseUrl(),
 });
 
 // Attach JWT from localStorage to every request automatically

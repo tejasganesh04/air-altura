@@ -1,5 +1,5 @@
-@import "tailwindcss";
 @import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500&family=Inter:wght@400;500&display=swap');
+@import "tailwindcss";
 
 /* ── Brand color + font tokens exposed to Tailwind v4 utility classes ── */
 @theme {

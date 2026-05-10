@@ -11,10 +11,10 @@ const app = express();
 app.use(cors({
     origin: process.env.ALLOWED_ORIGIN || '*',
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'Idempotency-Key'],
 }));
 
-// Body parsing only applied to /api/v1/auth — routes the Gateway handles directly.
+// Body parsing only applied to /api/v1/auth - routes the Gateway handles directly.
 // Proxy routes (/flights, /bookings etc.) must NOT have body parsed here,
 // as consuming the stream prevents http-proxy-middleware from forwarding the body.
 app.use('/api/v1/auth', express.json());
