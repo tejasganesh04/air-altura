@@ -3,6 +3,9 @@
 Air Altura is primarily an advanced airline booking system built as a full-stack microservices monorepo. The React frontend presents the system as a fictional airline website called "Air Altura" so the booking, payment, seat inventory, cancellation, and notification workflows can be tested end to end through a realistic user interface.
 
 The repo includes an API gateway, flights service, booking service, notifications service, database/cache/queue infrastructure, and the Air Altura frontend demo.
+## Architecture
+
+<img width="1536" height="1024" alt="design_diagram_altura" src="https://github.com/user-attachments/assets/143767fe-bb07-4563-925c-4362e8a84c7a" />
 
 ## Run Locally
 
