@@ -38,7 +38,7 @@ export default function BookingPage() {
   const travellers    = state?.travellers    || 1;
   const seatClass     = state?.seatClass     || 'economy';
   const selectedClass = state?.selectedClass;
-  const pricePerSeat  = selectedClass?.price ?? flight?.price ?? 0;
+  const pricePerSeat  = selectedClass?.price ?? 0;
   const totalCost     = state?.totalCost     ?? pricePerSeat * travellers;
 
   const [loading, setLoading] = useState(false);

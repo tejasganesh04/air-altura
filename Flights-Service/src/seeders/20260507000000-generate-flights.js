@@ -194,8 +194,6 @@ module.exports = {
             arrivalAirportId:   route.to,
             departureTime,
             arrivalTime,
-            price:      basePrice,   // economy base — kept for backward compat (Stage 6 removes this)
-            totalSeats: AIRPLANE_CLASS_SEATS[airplaneId]['economy'],
             boardingGate: 'SEED',
             stopType:   isOneStop ? 'ONE_STOP' : 'DIRECT',
             createdAt: now,

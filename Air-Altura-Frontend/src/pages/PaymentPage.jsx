@@ -72,7 +72,12 @@ export default function PaymentPage() {
   }, [booking?.createdAt, confirmed, expired]);
 
   const blocker = useBlocker(!confirmed && !expired);
-  useBeforeUnload(useCallback(() => !confirmed && !expired, [confirmed, expired]));
+  useBeforeUnload(useCallback((event) => {
+    if (!confirmed && !expired) {
+      event.preventDefault();
+      event.returnValue = '';
+    }
+  }, [confirmed, expired]));
 
   async function handleCancelAndLeave() {
     setCancelling(true);

@@ -5,12 +5,9 @@ const AppError = require('../utils/errors/app-error');
  * Middleware: validateCreateRequest (Flights)
  * Guards the POST /flights route by checking that all required fields are present in req.body.
  *
- * Two valid shapes:
- *  - v2 (preferred): seatClasses array present — price and totalSeats are derived from it.
- *  - v1 (legacy):    price and totalSeats present directly on the body.
- *
- * Required in both cases: flightNumber, airplaneId, departureAirportId, arrivalAirportId,
- *                         arrivalTime, departureTime.
+ * Required: flightNumber, airplaneId, departureAirportId, arrivalAirportId, arrivalTime,
+ *           departureTime, and a non-empty seatClasses array (price/seat count live per
+ *           cabin on FlightClasses — there is no flat price/totalSeats path anymore).
  * Responds 400 BAD_REQUEST immediately with a descriptive message if any field is missing.
  *
  * @param {import('express').Request}  req
@@ -48,19 +45,13 @@ function validateCreateRequest(req, res, next){
         ErrorResponse.error = new AppError('Departure time not found in the oncoming request', StatusCodes.BAD_REQUEST);
         return res.status(StatusCodes.BAD_REQUEST).json(ErrorResponse);
     }
-    // v2 path: seatClasses array satisfies both price and seat-count requirements
+    // seatClasses is required — price and seat count live entirely on FlightClasses now,
+    // the legacy v1 (flat price/totalSeats) creation path has been removed.
     const hasSeatClasses = Array.isArray(req.body.seatClasses) && req.body.seatClasses.length > 0;
     if(!hasSeatClasses){
-        if(!req.body.price){
-            ErrorResponse.message = 'Something went wrong while creating flight';
-            ErrorResponse.error = new AppError('Price (or seatClasses) not found in the oncoming request', StatusCodes.BAD_REQUEST);
-            return res.status(StatusCodes.BAD_REQUEST).json(ErrorResponse);
-        }
-        if(!req.body.totalSeats){
-            ErrorResponse.message = 'Something went wrong while creating flight';
-            ErrorResponse.error = new AppError('Total seats (or seatClasses) not found in the oncoming request', StatusCodes.BAD_REQUEST);
-            return res.status(StatusCodes.BAD_REQUEST).json(ErrorResponse);
-        }
+        ErrorResponse.message = 'Something went wrong while creating flight';
+        ErrorResponse.error = new AppError('seatClasses array is required', StatusCodes.BAD_REQUEST);
+        return res.status(StatusCodes.BAD_REQUEST).json(ErrorResponse);
     }
     next();
 }
@@ -68,18 +59,29 @@ function validateCreateRequest(req, res, next){
 
 /**
  * Middleware: validateUpdateSeatsRequest (Flights)
- * Guards the PATCH /flights/:id/seats route by ensuring `seats` is present in req.body.
- * Responds 400 BAD_REQUEST if the field is missing; calls next() otherwise.
+ * Guards the PATCH /flights/:id/seats route by ensuring `seats` and `seatClass` are
+ * both present in req.body. seatClass used to be optional (a missing value fell back
+ * to a flight-level seat update) — that legacy path was removed since it targeted a
+ * column (Flights.totalSeats) that no longer exists, so seatClass is now required here
+ * too. This is a fast-fail nicety for the HTTP route specifically — the real enforcement
+ * lives in flight-service.js's updateSeats(), since the seat-restoration RabbitMQ
+ * subscriber calls that function directly and never passes through this middleware.
+ * Responds 400 BAD_REQUEST if either field is missing; calls next() otherwise.
  *
  * @param {import('express').Request}  req
  * @param {import('express').Response} res
  * @param {import('express').NextFunction} next
  */
 function validateUpdateSeatsRequest(req,res,next){
-  
+
     if(!req.body.seats){
         ErrorResponse.message = 'Something went wrong while updating flight';
         ErrorResponse.error = new AppError('seats not found in the oncoming request',StatusCodes.BAD_REQUEST)
+        return res.status(StatusCodes.BAD_REQUEST).json(ErrorResponse);
+    }
+    if(!req.body.seatClass){
+        ErrorResponse.message = 'Something went wrong while updating flight';
+        ErrorResponse.error = new AppError('seatClass not found in the oncoming request',StatusCodes.BAD_REQUEST)
         return res.status(StatusCodes.BAD_REQUEST).json(ErrorResponse);
     }
 
@@ -88,4 +90,30 @@ function validateUpdateSeatsRequest(req,res,next){
 
 
 
-module.exports = {validateCreateRequest,validateUpdateSeatsRequest};
+/**
+ * Middleware: validateSearchRequest (Flights)
+ * Guards GET /flights by requiring `trips` and `tripDate` in req.query — mirrors
+ * the frontend SearchWidget's own requirement, now enforced server-side too so
+ * a direct API call can't skip it.
+ * Responds 400 BAD_REQUEST if either is missing; calls next() otherwise.
+ *
+ * @param {import('express').Request}  req
+ * @param {import('express').Response} res
+ * @param {import('express').NextFunction} next
+ */
+function validateSearchRequest(req, res, next){
+    if(!req.query.trips){
+        ErrorResponse.message = 'Something went wrong while searching flights';
+        ErrorResponse.error = new AppError('trips not found in the oncoming request', StatusCodes.BAD_REQUEST);
+        return res.status(StatusCodes.BAD_REQUEST).json(ErrorResponse);
+    }
+    if(!req.query.tripDate){
+        ErrorResponse.message = 'Something went wrong while searching flights';
+        ErrorResponse.error = new AppError('tripDate not found in the oncoming request', StatusCodes.BAD_REQUEST);
+        return res.status(StatusCodes.BAD_REQUEST).json(ErrorResponse);
+    }
+    next();
+}
+
+
+module.exports = {validateCreateRequest,validateUpdateSeatsRequest,validateSearchRequest};

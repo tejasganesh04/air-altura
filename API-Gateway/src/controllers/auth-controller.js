@@ -10,10 +10,10 @@ const MIN_PASSWORD_LENGTH = 8;
 
 async function register(req, res) {
     try {
-        const { email, password } = req.body;
+        const { email, password, name } = req.body;
 
-        if (!email || !password) {
-            return res.status(StatusCodes.BAD_REQUEST).json({ message: 'Email and password are required' });
+        if (!email || !password || !name) {
+            return res.status(StatusCodes.BAD_REQUEST).json({ message: 'Name, email and password are required' });
         }
         if (!EMAIL_RE.test(email)) {
             return res.status(StatusCodes.BAD_REQUEST).json({ message: 'Please enter a valid email address' });
@@ -23,7 +23,7 @@ async function register(req, res) {
         }
 
         const hashed = await bcrypt.hash(password, SALT_ROUNDS);
-        const user = await User.create({ email, password: hashed });
+        const user = await User.create({ email, password: hashed, name: name.trim() });
         const token = jwt.sign({ id: user.id, email: user.email }, JWT_SECRET, { expiresIn: JWT_EXPIRY });
 
         return res.status(StatusCodes.CREATED).json({ token, userId: user.id });

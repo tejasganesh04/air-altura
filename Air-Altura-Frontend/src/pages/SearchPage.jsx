@@ -32,7 +32,7 @@ export default function SearchPage() {
   const navigate = useNavigate();
   const [search, setSearch] = useState({
     fromCode: '', toCode: '', tripDate: '', travellers: 1, priceMax: '',
-    seatClass: 'economy', stopType: '',
+    seatClass: '', stopType: '',
   });
 
   function handleSearch() {
@@ -45,7 +45,7 @@ export default function SearchPage() {
     if (search.tripDate)   params.set('tripDate',   search.tripDate);
     if (search.travellers) params.set('travellers', search.travellers);
     if (search.priceMax)   params.set('price',      `0-${search.priceMax}`);
-    if (search.seatClass)  params.set('seatClass',  search.seatClass);
+    params.set('seatClass', search.seatClass);
     if (search.stopType)   params.set('stopType',   search.stopType);
     navigate(`/results?${params.toString()}`);
   }

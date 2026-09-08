@@ -4,6 +4,7 @@ import AirportCombobox from './AirportCombobox';
 import Magnet from './Magnet';
 
 const SEAT_CLASSES = [
+  { value: '',                label: 'Any class' },
   { value: 'economy',         label: 'Economy' },
   { value: 'premium-economy', label: 'Prem. Economy' },
   { value: 'business',        label: 'Business' },
@@ -222,7 +223,6 @@ export default function SearchWidget({ values, onChange, onSubmit, compact = fal
             <div
               className="relative flex flex-col justify-center px-4 py-3 border-r border-aa-mist cursor-pointer hover:bg-aa-cream/70 transition-colors duration-150"
               style={fieldRing(active === 'date', missing.date)}
-              onClick={() => { setActive('date'); mobileDateRef.current?.showPicker?.(); }}
             >
               <input
                 ref={mobileDateRef}
@@ -230,9 +230,10 @@ export default function SearchWidget({ values, onChange, onSubmit, compact = fal
                 min={TODAY}
                 value={values.tripDate}
                 onChange={e => update('tripDate', e.target.value)}
+                onFocus={() => setActive('date')}
                 onBlur={() => setActive(null)}
-                style={{ position: 'absolute', width: 0, height: 0, opacity: 0, pointerEvents: 'none' }}
-                tabIndex={-1}
+                className="absolute inset-0 w-full h-full cursor-pointer"
+                style={{ opacity: 0 }}
               />
               <span className={labelSz}>Date</span>
               <span className={`font-body text-sm select-none leading-snug ${formattedDate ? 'text-aa-ink' : 'text-aa-slate/55'}`}>
@@ -241,7 +242,7 @@ export default function SearchWidget({ values, onChange, onSubmit, compact = fal
             </div>
             <PillSelect
               label="Cabin"
-              value={values.seatClass || 'economy'}
+              value={values.seatClass ?? ''}
               onChange={v => update('seatClass', v)}
               options={SEAT_CLASSES}
               fullWidth
@@ -357,7 +358,6 @@ export default function SearchWidget({ values, onChange, onSubmit, compact = fal
           <div
             className={`relative flex flex-col justify-center ${fieldPx} shrink-0 hover:bg-aa-cream/70 transition-colors duration-150 cursor-pointer`}
             style={{ width: compact ? 116 : 132, ...fieldRing(active === 'date', missing.date) }}
-            onClick={() => { setActive('date'); dateRef.current?.showPicker?.(); }}
           >
             <input
               ref={dateRef}
@@ -365,9 +365,10 @@ export default function SearchWidget({ values, onChange, onSubmit, compact = fal
               min={TODAY}
               value={values.tripDate}
               onChange={e => update('tripDate', e.target.value)}
+              onFocus={() => setActive('date')}
               onBlur={() => setActive(null)}
-              style={{ position: 'absolute', width: 0, height: 0, opacity: 0, pointerEvents: 'none' }}
-              tabIndex={-1}
+              className="absolute inset-0 w-full h-full cursor-pointer"
+              style={{ opacity: 0 }}
             />
             <span className={labelSz}>Date</span>
             <span className={`font-body text-sm select-none leading-snug ${formattedDate ? 'text-aa-ink' : 'text-aa-slate/55'}`}>
@@ -381,7 +382,7 @@ export default function SearchWidget({ values, onChange, onSubmit, compact = fal
           <div style={fieldRing(active === 'cabin', false)}>
             <PillSelect
               label="Cabin"
-              value={values.seatClass || 'economy'}
+              value={values.seatClass ?? ''}
               onChange={v => update('seatClass', v)}
               options={SEAT_CLASSES.map(o => ({ ...o, label: o.value === 'premium-economy' ? 'Prem. Economy' : o.label }))}
               width={compact ? 108 : 124}

@@ -210,6 +210,8 @@ export default function FlightDetailPage() {
   const flightNumber  = flight.flightNumber || `#${flight.id}`;
   const totalCost     = activeClass ? activeClass.price * travellers : 0;
   const soldOut       = activeClass?.totalSeats === 0 || hasDeparted;
+  const insufficientSeats = !soldOut && activeClass && activeClass.totalSeats < travellers;
+  const cantBook      = soldOut || insufficientSeats;
 
   function handleBook() {
     navigate('/booking', {
@@ -270,6 +272,7 @@ export default function FlightDetailPage() {
                 fc={fc}
                 isSelected={fc.seatClass === selectedClass}
                 hasDeparted={hasDeparted}
+                travellers={travellers}
                 onSelect={setSelected}
               />
             ))}
@@ -279,7 +282,7 @@ export default function FlightDetailPage() {
         {/* Book bar */}
         <div className="bg-white border border-aa-mist rounded-xl px-6 py-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4" style={{ borderTop: '3px solid #C8754E' }}>
           <div>
-            {activeClass && !soldOut ? (
+            {activeClass && !cantBook ? (
               <>
                 <div className="font-body text-[11px] font-medium tracking-[0.24em] uppercase text-aa-slate mb-0.5">
                   {CLASS_LABELS[activeClass.seatClass]} · {travellers} traveller{travellers > 1 ? 's' : ''}
@@ -294,18 +297,22 @@ export default function FlightDetailPage() {
               </>
             ) : (
               <div className="font-body text-sm text-aa-caution">
-                {hasDeparted ? 'This flight has already departed' : 'This cabin is sold out'}
+                {hasDeparted
+                  ? 'This flight has already departed'
+                  : soldOut
+                    ? 'This cabin is sold out'
+                    : `Only ${activeClass?.totalSeats} seat${activeClass?.totalSeats === 1 ? '' : 's'} left in this cabin — you need ${travellers}`}
               </div>
             )}
           </div>
 
           <button
             onClick={handleBook}
-            disabled={soldOut || !activeClass}
+            disabled={cantBook || !activeClass}
             className="text-white font-body text-[15px] font-medium px-8 py-3 rounded-full border-none cursor-pointer transition-opacity duration-300 hover:opacity-85 disabled:opacity-40 disabled:cursor-not-allowed whitespace-nowrap"
             style={{ backgroundColor: '#4F6FEE' }}
           >
-            {hasDeparted ? 'Departed' : soldOut ? 'Sold out' : `Book · ${travellers} seat${travellers > 1 ? 's' : ''}`}
+            {hasDeparted ? 'Departed' : soldOut ? 'Sold out' : insufficientSeats ? 'Not enough seats' : `Book · ${travellers} seat${travellers > 1 ? 's' : ''}`}
           </button>
         </div>
 
@@ -368,29 +375,34 @@ const CABIN_TIERS = {
   },
 };
 
-function CabinCard({ fc, isSelected, hasDeparted, onSelect }) {
+function CabinCard({ fc, isSelected, hasDeparted, travellers, onSelect }) {
   const [hovered, setHovered] = useState(false);
-  const cfg      = CABIN_TIERS[fc.seatClass] || CABIN_TIERS['economy'];
-  const isSoldOut = fc.totalSeats === 0 || hasDeparted;
-  const lowSeats  = !isSoldOut && fc.totalSeats > 0 && fc.totalSeats <= 10;
+  const cfg               = CABIN_TIERS[fc.seatClass] || CABIN_TIERS['economy'];
+  const isSoldOut          = fc.totalSeats === 0 || hasDeparted;
+  // Has real seats, just not enough for this party — genuinely different
+  // from sold out, so it gets its own check and its own honest label
+  // instead of reusing "Sold out."
+  const insufficientSeats  = !isSoldOut && fc.totalSeats < travellers;
+  const unselectable       = isSoldOut || insufficientSeats;
+  const lowSeats           = !unselectable && fc.totalSeats <= 10;
 
   const cardBg     = isSelected ? cfg.activeBg : '#ffffff';
   const cardBorder = isSelected
     ? cfg.activeBorder
-    : hovered && !isSoldOut ? '#B8B0A4' : '#E8E2D6';
+    : hovered && !unselectable ? '#B8B0A4' : '#E8E2D6';
   const textColor  = isSelected ? cfg.activeText : '#1A2731';
   const mutedColor = isSelected ? cfg.activeMuted : '#8A9299';
   const sepColor   = isSelected ? (cfg.activeText === '#FAF6F0' || cfg.activeText === '#C4994A'
     ? 'rgba(255,255,255,0.12)' : 'rgba(14,59,77,0.12)') : '#E8E2D6';
 
-  const lift = (isSelected || hovered) && !isSoldOut;
+  const lift = (isSelected || hovered) && !unselectable;
 
   return (
     <button
       type="button"
-      onClick={() => !isSoldOut && onSelect(fc.seatClass)}
-      disabled={isSoldOut}
-      onMouseEnter={() => !isSoldOut && setHovered(true)}
+      onClick={() => !unselectable && onSelect(fc.seatClass)}
+      disabled={unselectable}
+      onMouseEnter={() => !unselectable && setHovered(true)}
       onMouseLeave={() => setHovered(false)}
       style={{
         position: 'relative',
@@ -401,12 +413,12 @@ function CabinCard({ fc, isSelected, hasDeparted, onSelect }) {
         borderRadius: '14px',
         border: `1.5px solid ${cardBorder}`,
         background: cardBg,
-        cursor: isSoldOut ? 'not-allowed' : 'pointer',
-        opacity: isSoldOut ? 0.42 : 1,
+        cursor: unselectable ? 'not-allowed' : 'pointer',
+        opacity: unselectable ? 0.42 : 1,
         transform: lift ? 'translateY(-5px)' : 'none',
         boxShadow: isSelected
           ? `0 14px 44px ${cfg.accent}26, 0 4px 12px rgba(0,0,0,0.09)`
-          : hovered && !isSoldOut
+          : hovered && !unselectable
             ? '0 8px 28px rgba(14,59,77,0.11), 0 2px 6px rgba(0,0,0,0.05)'
             : '0 1px 4px rgba(14,59,77,0.05)',
         transition: 'transform 230ms cubic-bezier(0.25,0,0.1,1), box-shadow 230ms cubic-bezier(0.25,0,0.1,1), border-color 180ms ease, background-color 200ms ease',
@@ -423,7 +435,7 @@ function CabinCard({ fc, isSelected, hasDeparted, onSelect }) {
       }} />
 
       {/* Badge */}
-      {cfg.badge && !isSelected && !isSoldOut && (
+      {cfg.badge && !isSelected && !unselectable && (
         <div style={{
           position: 'absolute', top: '13px', right: '12px',
           fontSize: '9px', fontFamily: 'Inter, system-ui, sans-serif',
@@ -499,16 +511,18 @@ function CabinCard({ fc, isSelected, hasDeparted, onSelect }) {
             display: 'flex', alignItems: 'center', gap: '5px',
             fontFamily: 'Inter, system-ui, sans-serif',
             fontSize: '11px',
-            color: lowSeats ? '#B45309' : mutedColor,
-            fontWeight: lowSeats ? 600 : 400,
+            color: (lowSeats || insufficientSeats) ? '#B45309' : mutedColor,
+            fontWeight: (lowSeats || insufficientSeats) ? 600 : 400,
           }}>
-            {lowSeats && (
+            {(lowSeats || insufficientSeats) && (
               <span className="animate-pulse" style={{
                 width: '5px', height: '5px', borderRadius: '50%',
                 background: '#F59E0B', display: 'inline-block', flexShrink: 0,
               }} />
             )}
-            {lowSeats ? `Only ${fc.totalSeats} left` : `${fc.totalSeats} seats`}
+            {insufficientSeats
+              ? `Only ${fc.totalSeats} left — need ${travellers}`
+              : lowSeats ? `Only ${fc.totalSeats} left` : `${fc.totalSeats} seats`}
           </div>
         )}
       </div>

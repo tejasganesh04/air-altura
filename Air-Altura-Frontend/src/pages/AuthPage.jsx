@@ -7,6 +7,7 @@ const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const MIN_PASSWORD = 8;
 
 function validate(mode, form) {
+  if (mode === 'register' && !form.name.trim()) return 'Name is required';
   if (!form.email) return 'Email is required';
   if (!EMAIL_RE.test(form.email)) return 'Please enter a valid email address';
   if (!form.password) return 'Password is required';
@@ -23,7 +24,7 @@ export default function AuthPage() {
   const returnState = location.state?.returnState || null;
 
   const [mode, setMode]       = useState('login');
-  const [form, setForm]       = useState({ email: '', password: '' });
+  const [form, setForm]       = useState({ name: '', email: '', password: '' });
   const [error, setError]     = useState(null);
   const [loading, setLoading] = useState(false);
 
@@ -32,7 +33,7 @@ export default function AuthPage() {
   function switchMode(next) {
     setMode(next);
     setError(null);
-    setForm({ email: '', password: '' });
+    setForm({ name: '', email: '', password: '' });
   }
 
   async function handleSubmit(e) {
@@ -46,6 +47,7 @@ export default function AuthPage() {
     try {
       if (mode === 'register') {
         const { data } = await api.post('/auth/register', {
+          name:     form.name.trim(),
           email:    form.email,
           password: form.password,
         });
@@ -84,6 +86,24 @@ export default function AuthPage() {
               {mode === 'login' ? 'Sign in to Altura.' : 'Begin with Altura.'}
             </h2>
           </div>
+
+          {/* Name */}
+          {mode === 'register' && (
+            <div className="flex flex-col gap-1.5">
+              <label className="font-body text-[11px] font-medium tracking-[0.12em] uppercase text-aa-slate">
+                Name
+              </label>
+              <input
+                className="aa-input"
+                type="text"
+                value={form.name}
+                onChange={e => update('name', e.target.value)}
+                placeholder="Your full name"
+                autoComplete="name"
+                required
+              />
+            </div>
+          )}
 
           {/* Email */}
           <div className="flex flex-col gap-1.5">

@@ -1,6 +1,6 @@
 node_modules/
 *.log
-.claude/
+
 
 # Local env files and secrets
 .env
@@ -10,3 +10,16 @@ node_modules/
 !.env.example
 !.env.docker.example
 !**/.env.example
+
+# Personal interview-prep / study material — not part of the shippable project
+annotated-code/
+interviewprep.txt
+resumeentry.txt
+AIR_ALTURA_DEEP_DIVE.md
+air-altura-interview-guide.html alias
+design_diagram_altura.png
+Air-Altura-Frontend/public/assets/advertising banner air altura.png
+
+# OS / editor junk
+.DS_Store
+Thumbs.db

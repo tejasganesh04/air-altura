@@ -35,8 +35,8 @@ const {BOOKED,CANCELLED} = ENUMS.BOOKING_STATUS;
  *
  * Steps:
  *  1. Fetch flight details from the Flight Service via HTTP GET
- *  2. Check if requested seats <= available seats on the flight — throw 400 if not
- *  3. Calculate total billing amount = noofSeats * flight.price
+ *  2. Check if requested seats <= available seats on the requested cabin class — throw 400 if not
+ *  3. Calculate total billing amount = noofSeats * flightClass.price
  *  4. Create a booking record in the DB with status INITIATED (inside transaction)
  *  5. Call Flight Service PATCH to decrement available seats on the flight
  *  6. Commit the transaction

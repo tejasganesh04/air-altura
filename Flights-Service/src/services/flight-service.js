@@ -16,13 +16,11 @@ const flightRepository = new FlightRepository();
 const CACHE_TTL = 4 * 60 * 60;
 
 /**
- * Validates the departure/arrival times and creates a new flight record in the database.
- * When the request body contains a seatClasses array the repository creates the Flight and
- * all FlightClass rows together in one transaction (v2 path).
- * Without seatClasses the legacy single-row create is used (backward compat).
+ * Validates the departure/arrival times and creates a new flight together with its
+ * cabin-class inventory rows, in a single transaction.
  *
  * @param {Object}  data             - Flight fields passed from the controller.
- * @param {Array}   [data.seatClasses] - Optional cabin-class array: [{ seatClass, price, totalSeats }].
+ * @param {Array}   data.seatClasses - Required cabin-class array: [{ seatClass, price, totalSeats }].
  * @returns {Promise<Flight>} The newly created Flight instance.
  */
 async function createFlight(data){
@@ -30,9 +28,7 @@ async function createFlight(data){
         if(compareTime(data.departureTime, data.arrivalTime)){
             throw new AppError('Departure time must be before arrival time', StatusCodes.BAD_REQUEST);
         }
-        const flight = data.seatClasses
-            ? await flightRepository.createFlightWithClasses(data)
-            : await flightRepository.create(data);
+        const flight = await flightRepository.createFlightWithClasses(data);
         return flight;
     }catch(error){
         if(error instanceof AppError) throw error;
@@ -198,16 +194,21 @@ async function getFlight(id){
  * @returns {Promise<Flight|FlightClass>} The updated instance reflecting the new seat count.
  */
 async function updateSeats(data){
+    // seatClass is required — the legacy flight-level fallback (updateRemainingSeats)
+    // has been removed, since it targeted Flights.totalSeats, a column that no longer
+    // exists. Enforced here in the service layer, not just in route middleware, because
+    // the seat-restoration RabbitMQ subscriber calls this function directly and never
+    // goes through Express routing/middleware at all.
+    if(!data.seatClass){
+        throw new AppError('seatClass is required', StatusCodes.BAD_REQUEST);
+    }
     try {
-        if(data.seatClass){
-            return await flightRepository.updateRemainingClassSeats(
-                data.flightId,
-                data.seatClass,
-                data.seats,
-                data.dec
-            );
-        }
-        return await flightRepository.updateRemainingSeats(data.flightId, data.seats, data.dec);
+        return await flightRepository.updateRemainingClassSeats(
+            data.flightId,
+            data.seatClass,
+            data.seats,
+            data.dec
+        );
     } catch(error) {
         if(error instanceof AppError) throw error;
         throw new AppError('Cannot update data of the flight', StatusCodes.INTERNAL_SERVER_ERROR);

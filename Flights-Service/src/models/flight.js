@@ -59,13 +59,7 @@ module.exports = (sequelize, DataTypes) => {
     departureTime: {type:DataTypes.DATE,
       allowNull:false
     },
-    price: {type:DataTypes.INTEGER,
-      allowNull:false
-    },
     boardingGate: { type:DataTypes.STRING},
-    totalSeats: {type:DataTypes.INTEGER,//total available seats — kept for backward compat during migration, removed in Stage 6
-      allowNull:false
-    },
     stopType: {
       type: DataTypes.ENUM,
       values: ['DIRECT', 'ONE_STOP'],

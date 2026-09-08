@@ -22,10 +22,8 @@ async function createFlight(req,res){
             arrivalAirportId:   req.body.arrivalAirportId,
             arrivalTime:        req.body.arrivalTime,
             departureTime:      req.body.departureTime,
-            price:              req.body.price,
             boardingGate:       req.body.boardingGate,
-            totalSeats:         req.body.totalSeats,
-            seatClasses:        req.body.seatClasses   // optional v2 cabin-class array
+            seatClasses:        req.body.seatClasses   // required — price/seats per cabin
         });
         SuccessResponse.data = flight;
         return res.status(

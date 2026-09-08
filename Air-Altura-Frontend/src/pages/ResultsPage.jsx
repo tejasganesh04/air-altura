@@ -69,7 +69,7 @@ export default function ResultsPage() {
   const tripDate   = searchParams.get('tripDate')  || '';
   const travellers = Number(searchParams.get('travellers')) || 1;
   const priceParam = searchParams.get('price')     || '';
-  const seatClass  = searchParams.get('seatClass') || 'economy';
+  const seatClass  = searchParams.get('seatClass') || '';
   const stopType   = searchParams.get('stopType')  || '';
   const priceMax   = priceParam ? Number(priceParam.split('-')[1]) || '' : '';
 
@@ -121,7 +121,7 @@ export default function ResultsPage() {
     if (search.tripDate)   params.set('tripDate',   search.tripDate);
     if (search.travellers) params.set('travellers', search.travellers);
     if (search.priceMax)   params.set('price',      `0-${search.priceMax}`);
-    if (search.seatClass)  params.set('seatClass',  search.seatClass);
+    params.set('seatClass', search.seatClass);
     if (search.stopType)   params.set('stopType',   search.stopType);
     setSearchParams(params);
   }
@@ -161,16 +161,30 @@ export default function ResultsPage() {
             {chips.map((c, i) => <FilterChip key={i} label={c.label} type={c.type} />)}
           </div>
 
-          <select
-            className="aa-input py-1.5 px-3 text-sm w-auto self-start sm:self-auto"
-            value={sort}
-            onChange={e => setSort(e.target.value)}
-            style={{ minWidth: 180 }}
-          >
-            {SORT_OPTIONS.map(o => (
-              <option key={o.value} value={o.value}>{o.label}</option>
-            ))}
-          </select>
+          <div className="flex items-center gap-2 self-start sm:self-auto">
+            <input
+              type="number"
+              min="0"
+              inputMode="numeric"
+              placeholder="Max price"
+              value={search.priceMax}
+              onChange={e => setSearch(s => ({ ...s, priceMax: e.target.value }))}
+              onKeyDown={e => { if (e.key === 'Enter') handleReSearch(); }}
+              className="aa-input py-1.5 px-3 text-sm"
+              style={{ width: 110 }}
+            />
+
+            <select
+              className="aa-input py-1.5 px-3 text-sm w-auto"
+              value={sort}
+              onChange={e => setSort(e.target.value)}
+              style={{ minWidth: 180 }}
+            >
+              {SORT_OPTIONS.map(o => (
+                <option key={o.value} value={o.value}>{o.label}</option>
+              ))}
+            </select>
+          </div>
         </div>
       </section>
 
@@ -196,7 +210,7 @@ export default function ResultsPage() {
             {flights.map((flight) => {
               const flightClasses = flight.FlightClasses || [];
               const selectedClass = resolveClass(flightClasses, seatClass);
-              const classPrice    = selectedClass?.price ?? flight.price;
+              const classPrice    = selectedClass?.price;
               const isOneStop     = flight.stopType === 'ONE_STOP';
               const depCode       = flight.departureAirportId;
               const arrCode       = flight.arrivalAirportId;
